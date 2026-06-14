@@ -27,6 +27,8 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
 
+const userRole = ref(localStorage.getItem('role'));
+
 const baches = ref([]);
 const cuadrillas = ref([]); 
 const materiales = ref([]); 
@@ -52,19 +54,33 @@ const fetchAndRenderMarkers = async () => {
   try {
     const config = { headers: { 'Authorization': `Bearer ${token}` } };
     
-    const [resBaches, resCuadrillas, resMateriales] = await Promise.all([
-      axios.get('http://localhost:8000/api/baches', config),
-      axios.get('http://localhost:8000/api/cuadrillas', config),
-      axios.get('http://localhost:8000/api/materiales', config)
-    ]);
+    if (userRole.value === 'Jefe de Cuadrilla') {
+      const resBaches = await axios.get('http://localhost:8000/api/baches', config);
+      // 💡 CORREGIDO: Ahora el jefe solo ve sus baches pendientes, asignados o en proceso
+      baches.value = resBaches.data.filter(bache => bache.estado !== 'Reparado');
+      cuadrillas.value = [];
+      materiales.value = [];
+    } else {
+      const [resBaches, resCuadrillas, resMateriales] = await Promise.all([
+        axios.get('http://localhost:8000/api/baches', config),
+        axios.get('http://localhost:8000/api/cuadrillas', config),
+        axios.get('http://localhost:8000/api/materiales', config)
+      ]);
+      baches.value = resBaches.data.filter(bache => bache.estado !== 'Reparado');
+      cuadrillas.value = resCuadrillas.data;
+      materiales.value = resMateriales.data;
+    }
 
-    baches.value = resBaches.data.filter(bache => bache.estado !== 'Reparado');
-    cuadrillas.value = resCuadrillas.data;
-    materiales.value = resMateriales.data;
-
+    // 🛡️ ESCUDO LEAFLET: Cerramos popups activos antes de limpiar capas para evitar el error '_latLngToNewLayerPoint'
+    if (mapInstance.value) {
+      mapInstance.value.closePopup();
+    }
     markersGroup.value.clearLayers();
 
     baches.value.forEach(bache => {
+      // Validación preventiva de coordenadas geográficas
+      if (!bache.latitud || !bache.longitud) return;
+
       let color = 'green';
       if (bache.severidad === 'Alta') color = 'red';
       if (bache.severidad === 'Media') color = 'orange';
@@ -106,20 +122,27 @@ const fetchAndRenderMarkers = async () => {
       }
 
       if (seguroEstado === 'Pendiente') {
-        const select = document.createElement('select');
-        select.className = 'select-map';
-        select.innerHTML = '<option value="">-- Asignar Equipo --</option>';
-        cuadrillas.value.forEach(c => {
-          select.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
-        });
+        if (userRole.value === 'Jefe de Cuadrilla') {
+          const infoTag = document.createElement('div');
+          infoTag.innerHTML = '⏳ Esperando asignación oficial de la Alcaldía.';
+          infoTag.style.cssText = 'color: #7f8c8d; font-weight: bold; font-size: 0.85rem; margin-top: 10px; text-align: center;';
+          container.appendChild(infoTag);
+        } else {
+          const select = document.createElement('select');
+          select.className = 'select-map';
+          select.innerHTML = '<option value="">-- Asignar Equipo --</option>';
+          cuadrillas.value.forEach(c => {
+            select.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
+          });
 
-        const btnAsignar = document.createElement('button');
-        btnAsignar.innerHTML = '📌 Asignar Cuadrilla';
-        btnAsignar.className = 'btn-map btn-assign';
-        btnAsignar.onclick = () => asignarEquipo(bache.id, select.value);
+          const btnAsignar = document.createElement('button');
+          btnAsignar.innerHTML = '📌 Asignar Cuadrilla';
+          btnAsignar.className = 'btn-map btn-assign';
+          btnAsignar.onclick = () => asignarEquipo(bache.id, select.value);
 
-        container.appendChild(select);
-        container.appendChild(btnAsignar);
+          container.appendChild(select);
+          container.appendChild(btnAsignar);
+        }
       } 
       
       if (seguroEstado === 'Asignado') {
@@ -146,14 +169,12 @@ const fetchAndRenderMarkers = async () => {
           <div class="volume-preview">Volumen estimado: <b>0.0000 m³</b></div>
         `;
 
-        // 🔥 REFACTORIZADO UX: Selector dinámico inteligente conectado al camión en tránsito
         const selectMat = document.createElement('select');
         selectMat.className = 'select-map';
         
         if (bache.cuadrilla_id) {
           selectMat.innerHTML = '<option value="">⏳ Cargando materiales del camión...</option>';
           
-          // Consultamos de forma asíncrona lo que la cuadrilla transporta en tránsito hoy
           axios.get(`http://localhost:8000/api/cuadrillas/${bache.cuadrilla_id}/materiales-activos`, config)
             .then(res => {
               selectMat.innerHTML = '<option value="">-- Seleccionar Insumo (En Camión) --</option>';
@@ -177,7 +198,7 @@ const fetchAndRenderMarkers = async () => {
 
         const inpX = calcContainer.querySelector('.inp-x');
         const inpY = calcContainer.querySelector('.inp-y');
-        const inpP = calcContainer.querySelector('.inp-p');
+        const inpP = calcContainer.querySelector('.input-map-calc.inp-p');
         const lblVol = calcContainer.querySelector('.volume-preview');
 
         const calcularM3 = () => {

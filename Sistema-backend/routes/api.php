@@ -55,13 +55,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/stats-baches', [BacheController::class, 'getEstadisticas']);
     Route::post('/baches', [BacheController::class, 'store']);
 
+    // --- Módulo de Reportes de Inteligencia Vial ---
+    Route::get('/reportes-datos', [\App\Http\Controllers\ReportController::class, 'obtenerDatosReporte']);
+
+    // 🌐 ¡PEGA ESTA LÍNEA AQUÍ! (Permite el acceso al Administrador y al Técnico):
+    Route::get('/dashboard-stats', [\App\Http\Controllers\DashboardController::class, 'getStats'])
+         ->middleware('rol:Administrador,Técnico,Encargado de almacén,Analista Vial');
+
 
     // --- 👥 GESTIÓN DE OBREROS (Control de Personal de Campo) ---
     // 🔥 REFACTORIZADO: El Técnico ahora gestiona el CRUD completo y la restauración de bajas lógicas
     Route::get('/obreros/trashed', [ObreroController::class, 'getTrashed'])->middleware('rol:Administrador,Técnico');
     Route::post('/obreros/{id}/restore', [ObreroController::class, 'restore'])->middleware('rol:Administrador,Técnico');
 
-    Route::get('/obreros', [ObreroController::class, 'index'])->middleware('rol:Administrador,Técnico');
+    Route::get('/obreros', [ObreroController::class, 'index'])->middleware('rol:Administrador,Técnico,Jefe de Cuadrilla');
     Route::post('/obreros', [ObreroController::class, 'store'])->middleware('rol:Administrador,Técnico');
     Route::get('/obreros/{id}', [ObreroController::class, 'show'])->middleware('rol:Administrador,Técnico'); 
     Route::put('/obreros/{id}', [ObreroController::class, 'update'])->middleware('rol:Administrador,Técnico'); 
@@ -78,6 +85,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/cuadrillas', [CuadrillaController::class, 'index'])->middleware('rol:Administrador,Técnico,Encargado de almacén');
     Route::post('/cuadrillas', [CuadrillaController::class, 'store'])->middleware('rol:Administrador,Técnico');
     Route::get('/cuadrillas/{id}', [CuadrillaController::class, 'show'])->middleware('rol:Administrador,Técnico');
+    Route::put('/cuadrillas/{id}', [CuadrillaController::class, 'update'])->middleware('rol:Administrador,Técnico');
     Route::get('/cuadrillas/{id}/exportar-pdf', [CuadrillaController::class, 'exportarPersonalPdf'])->middleware('rol:Administrador,Técnico');
     
     // El Técnico de Flota e IoT también se incluye aquí para poder ver personal y usuarios si su vista lo requiere
@@ -108,11 +116,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/vehiculos-exportar-general-excel', [VehiculoController::class, 'exportarTodosExcel'])->middleware('rol:Administrador,Técnico de Flota e IoT');
 
 
-    // --- GESTIÓN DE ALMACÉN CENTRAL DE MATERIALES ---
-    Route::get('/materiales', [MaterialController::class, 'index']);
-    Route::put('/materiales/{id}', [MaterialController::class, 'update'])->middleware('admin');
-    Route::post('/materiales', [MaterialController::class, 'store'])->middleware('admin');
-    Route::delete('/materiales/{id}', [MaterialController::class, 'destroy'])->middleware('admin');
+     Route::get('/materiales', [MaterialController::class, 'index'])
+          ->middleware('rol:Administrador,Encargado de almacén,Técnico');
+
+     // Acciones de escritura exclusivas para el Administrador y el Encargado de almacén
+     Route::put('/materiales/{id}', [MaterialController::class, 'update'])
+          ->middleware('rol:Administrador,Encargado de almacén');
+
+     Route::post('/materiales', [MaterialController::class, 'store'])
+          ->middleware('rol:Administrador,Encargado de almacén');
+
+     Route::delete('/materiales/{id}', [MaterialController::class, 'destroy'])
+          ->middleware('rol:Administrador,Encargado de almacén');
 
 
     // --- 📈 ANALÍTICA AVANZADA DE TELEMETRÍA VIAL Y SALUD MECÁNICA ---
@@ -123,11 +138,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // --- 🔥 HISTORIAL Y AUDITORÍA VIAL DE REPARACIONES ---
     Route::get('/baches-historial', [\App\Http\Controllers\BacheController::class, 'getHistorialReparaciones'])
-         ->middleware('rol:Administrador,Técnico,Analista Vial');
+         ->middleware('rol:Administrador,Técnico,Analista Vial,Jefe de Cuadrilla');
     Route::get('/baches-historial-pdf', [\App\Http\Controllers\BacheController::class, 'exportarHistorialPdf'])
-         ->middleware('rol:Administrador,Técnico,Analista Vial');
+         ->middleware('rol:Administrador,Técnico,Analista Vial,Jefe de Cuadrilla');
     Route::get('/baches-historial-excel', [\App\Http\Controllers\BacheController::class, 'exportarHistorialExcel'])
-         ->middleware('rol:Administrador,Técnico,Analista Vial');
+         ->middleware('rol:Administrador,Técnico,Analista Vial,Jefe de Cuadrilla');
 
 
     // --- Módulo de Reportes de Inteligencia Vial ---
@@ -158,7 +173,7 @@ Route::middleware('auth:sanctum')->group(function () {
          ->middleware('rol:Administrador,Encargado de almacén');
          
     Route::get('cuadrillas-material/activos', [CuadrillaMaterialController::class, 'obtenerDespachosActivos'])
-         ->middleware('rol:Administrador,Encargado de almacén,Técnico');
+         ->middleware('rol:Administrador,Encargado de almacén,Técnico,Jefe de Cuadrilla');
          
     Route::get('cuadrillas/{id}/materiales-activos', [BacheController::class, 'obtenerMaterialesActivosCuadrilla'])
          ->middleware('rol:Administrador,Técnico,Jefe de Cuadrilla');
@@ -188,5 +203,5 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::post('/services', [ServiceController::class, 'store']);
     Route::put('/services/{id}', [ServiceController::class, 'update']);
     Route::delete('/services/{id}', [ServiceController::class, 'destroy']);
-    Route::get('/dashboard-stats', [\App\Http\Controllers\DashboardController::class, 'getStats']);
+    //Route::get('/dashboard-stats', [\App\Http\Controllers\DashboardController::class, 'getStats']);
 });

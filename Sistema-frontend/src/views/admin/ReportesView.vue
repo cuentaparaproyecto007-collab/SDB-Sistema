@@ -14,7 +14,7 @@
             <option value="cuadrillas">2. Rendimiento Operativo de Cuadrillas</option>
             <option value="almacen">3. Logística de Almacén y Consumo de Insumos</option>
             <option value="telemetria">4. Telemetría e Impactos de la Flota (IoT)</option>
-            <option value="usuarios">5. Auditoría de Usuarios y Roles de Seguridad</option>
+            <option v-if="userRole === 'Administrador'" value="5">5. Auditoría de Usuarios y Roles de Seguridad</option>
           </select>
         </div>
 

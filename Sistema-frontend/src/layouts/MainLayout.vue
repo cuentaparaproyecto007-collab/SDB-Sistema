@@ -8,10 +8,10 @@
       <nav class="sidebar-nav">
         <div class="menu-section-tag">Monitoreo</div>
 
-        <router-link 
-          v-if="userRole !== 'Técnico' && userRole !== 'Técnico de Flota e IoT'" 
-          to="/dashboard" 
-          class="nav-item" 
+        <router-link
+          v-if="userRole !== 'Técnico' && userRole !== 'Técnico de Flota e IoT' && userRole !== 'Jefe de Cuadrilla'&& userRole !== 'Encargado de almacén'"
+          to="/dashboard"
+          class="nav-item"
           active-class="active"
         >
           <div class="d-flex align-items-center item-menu">
@@ -20,7 +20,12 @@
           </div>
         </router-link>
         
-        <router-link v-if="can('mapa_de_baches') || userRole === 'Técnico'" to="/mapa" class="nav-item" active-class="active">
+        <router-link 
+          v-if="can('mapa_de_baches') || userRole === 'Técnico' || userRole === 'Jefe de Cuadrilla'" 
+          to="/mapa" 
+          class="nav-item" 
+          active-class="active"
+        >
           <div class="d-flex align-items-center item-menu">
             <i class="bi bi-geo-alt-fill item-icon"></i>
             <span class="menu-text">Mapa de Baches</span>
@@ -44,18 +49,18 @@
             <router-link v-if="can('gestion_usuarios')" to="/usuarios" class="nav-item sub-link" active-class="active">
               <i class="bi bi-person-badge-fill item-icon-sub"></i> ... Lista de Personal
             </router-link>
-            <router-link v-if="can('gestion_roles')" to="/roles" class="nav-item sub-link" active-class="active">
+            <!-- <router-link v-if="can('gestion_roles')" to="/roles" class="nav-item sub-link" active-class="active">
               <i class="bi bi-shield-lock-fill item-icon-sub"></i> Roles y Permisos
-            </router-link>
+            </router-link> -->
           </div>
         </div>
 
-        <div class="menu-section-tag" v-if="userRole !== 'Técnico de Flota e IoT'">OPERACIONES E INSUMOS</div>
+        <div class="menu-section-tag" v-if="userRole !== 'Técnico de Flota e IoT' && userRole !== 'Analista Vial'">OPERACIONES E INSUMOS</div>
 
-        <router-link 
-          v-if="userRole !== 'Técnico de Flota e IoT'" 
-          to="/inventario-materiales" 
-          class="nav-item" 
+        <router-link
+          v-if="userRole !== 'Técnico de Flota e IoT' && userRole !== 'Analista Vial'"
+          :to="{ name: 'materiales' }"
+          class="nav-item"
           active-class="active"
         >
           <div class="d-flex align-items-center item-menu">
@@ -64,7 +69,7 @@
           </div>
         </router-link>
 
-        <div v-if="can('gestionar_cuadrillas') || can('gestionar_obreros') || userRole === 'Técnico'" class="nav-dropdown">
+        <div v-if="can('gestionar_cuadrillas') || can('gestionar_obreros') || userRole === 'Técnico' || userRole === 'Jefe de Cuadrilla'" class="nav-dropdown">
           <div 
             @click="toggleCampoMenu" 
             :class="['nav-item dropdown-toggle', isCampoOpen ? 'active-parent' : '']"
@@ -79,7 +84,9 @@
             <router-link v-if="can('gestionar_cuadrillas') || userRole === 'Técnico'" to="/cuadrillas" class="nav-item sub-link" active-class="active">
               <i class="bi bi-person-workspace item-icon-sub"></i> Gestión de Cuadrillas
             </router-link>
-            <router-link v-if="can('gestionar_obreros') || userRole === 'Técnico'" to="/obreros" class="nav-item sub-link" active-class="active">
+
+            <!-- 💡 Aquí agregamos el operador OR para habilitar al Jefe de Cuadrilla -->
+            <router-link v-if="can('gestionar_obreros') || userRole === 'Técnico' || userRole === 'Jefe de Cuadrilla'" to="/obreros" class="nav-item sub-link" active-class="active">
               <i class="bi bi-tools item-icon-sub"></i> Registro de Obreros
             </router-link>
           </div>
@@ -123,7 +130,7 @@
         </router-link>
 
         <router-link 
-          v-if="userRole !== 'Técnico de Flota e IoT'" 
+          v-if="userRole !== 'Técnico de Flota e IoT' && userRole !== 'Encargado de almacén'" 
           to="/baches-historial" 
           class="nav-item" 
           active-class="active"
@@ -148,11 +155,13 @@
           </div>
         </router-link>
 
-        <div v-if="can('ver_reportes') && userRole !== 'Técnico'" class="menu-section-tag">Reportabilidad</div>
+        <!-- ✅ SECCIÓN DE REPORTES: EXCLUSIVA PARA ADMINISTRADOR Y ANALISTA VIAL -->
+        <div v-if="userRole === 'Administrador' || userRole === 'Analista Vial'" class="menu-section-tag">Reportabilidad</div>
 
-        <router-link v-if="can('ver_reportes') && userRole !== 'Técnico'" to="/reportes" class="nav-item" active-class="active">
+        <router-link v-if="userRole === 'Administrador' || userRole === 'Analista Vial'" to="/reportes" class="nav-item" active-class="active">
           <div class="d-flex align-items-center">
-            <i class="bi bi-file-earmark-pdf-fill item-icon"></i> Reportes y PDF
+            <i class="bi bi-file-earmark-pdf-fill item-icon"></i>
+            <span class="menu-text">Reportes y PDF</span>
           </div>
         </router-link>
 

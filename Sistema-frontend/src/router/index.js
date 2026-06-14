@@ -118,11 +118,12 @@ const router = createRouter({
           component: () => import('../views/admin/ReportesView.vue'),
           meta: { requiresAuth: true, rolesPermitidos: ['Administrador', 'Analista Vial'] }
         },
-        {
-          path: '/materiales',
+       {
+          path: 'materiales',
           name: 'materiales',
           component: () => import('../views/admin/MaterialesView.vue'),
-          meta: { requiresAuth: true, rolesPermitidos: ['Administrador', 'Encargado de almacén', 'Técnico', 'Jefe de Cuadrilla'] }
+          // 💡 Agregamos la versión en mayúsculas 'TÉCNICO'
+          meta: { requiresAuth: true, rolesPermitidos: ['Administrador', 'Encargado de almacén', 'Técnico', 'TÉCNICO', 'Jefe de Cuadrilla'] }
         },
         {
           path: '/salud-flota',
@@ -154,22 +155,22 @@ const router = createRouter({
 // ==========================================================================
 // 🛡️ GUARDIÁN DE NAVEGACIÓN GLOBAL (Verificación de Token y Roles Reales)
 // ==========================================================================
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, from) => {
   const token = localStorage.getItem('token');
   const userRole = localStorage.getItem('role'); // Lee: 'Administrador', 'Encargado de almacén', etc.
 
   // 1. Si la ruta requiere autenticación y no hay token, se va directo al Login
   if (to.meta.requiresAuth && !token) {
-    return next('/login');
+    return '/login';
   }
 
   // 2. Si la ruta restringe roles y el rol del usuario actual no está en la lista de permitidos
   if (to.meta.rolesPermitidos && !to.meta.rolesPermitidos.includes(userRole)) {
     alert(`Acceso denegado. Tu rol de [${userRole || 'Sin Rol'}] no tiene autorización para ingresar a este módulo.`);
-    return next('/dashboard'); // Redirección automática al inicio común seguro
+    return '/dashboard'; // Redirección automática al inicio común seguro
   }
 
-  next();
+  // Si pasa todas las validaciones, permite la navegación libremente
 });
 
 export default router

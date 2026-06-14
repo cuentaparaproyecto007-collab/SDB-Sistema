@@ -12,12 +12,32 @@ use Illuminate\Validation\Rule; // 🔥 NUEVO: Para exclusión de bajas en valid
 class ObreroController extends Controller
 {
     /**
-     * 1. LISTAR OBREROS (Solo activos)
+     * 1. LISTAR OBREROS (Solo activos - Filtro inteligente por Rol)
      */
     public function index()
     {
+        $user = Auth::user();
+        
+        // Iniciamos la consulta base cargando la relación de su cuadrilla
+        $query = Obrero::with('cuadrilla');
+
+        // 💡 CANDADO DE OPERACIONES: Si es Jefe de Cuadrilla, restringimos la lista a su propio equipo
+        if ($user && $user->role && $user->role->nombre === 'Jefe de Cuadrilla') {
+            
+            // Buscamos la cuadrilla que lidera este usuario mediante la columna real 'jefe_id'
+            $cuadrilla = Cuadrilla::where('jefe_id', $user->id)->first();
+
+            if ($cuadrilla) {
+                // Filtramos únicamente los obreros que pertenecen a su ID de cuadrilla
+                $query->where('cuadrilla_id', $cuadrilla->id);
+            } else {
+                // Si el usuario es jefe pero no tiene cuadrilla asociada, devolvemos un array vacío seguro
+                return response()->json([]);
+            }
+        }
+
         // Eloquent automáticamente filtra y excluye a los que tienen 'deleted_at' != null
-        $obreros = Obrero::with('cuadrilla')->get();
+        $obreros = $query->get();
         return response()->json($obreros);
     }
 
@@ -92,8 +112,7 @@ class ObreroController extends Controller
     }
 
     /**
-     * 🔥 NUEVO: 4. VER DETALLE DE UN OBRERO ESPECÍFICO
-     * Alimenta la ventana modal de inspección en el Frontend.
+     * 4. VER DETALLE DE UN OBRERO ESPECÍFICO
      */
     public function show($id)
     {
@@ -102,7 +121,7 @@ class ObreroController extends Controller
     }
 
     /**
-     * 🔥 NUEVO: 5. ACTUALIZAR DATOS DE UN OBRERO EXISTENTE
+     * 5. ACTUALIZAR DATOS DE UN OBRERO EXISTENTE
      */
     public function update(Request $request, $id)
     {

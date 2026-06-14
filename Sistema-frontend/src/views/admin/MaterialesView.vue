@@ -1,12 +1,15 @@
 <template>
   <div class="inventory-container">
-    <!-- 🔥 CABECERA DINÁMICA: Cambia de título e información de acuerdo al rango del funcionario -->
     <div class="header-box d-flex justify-content-between align-items-center">
       <div>
-        <h2>{{ userRole === 'Técnico' ? '🚚 Monitoreo de Insumos en Tránsito' : '📦 Almacén Central de Insumos Viales' }}</h2>
-        <p>{{ userRole === 'Técnico' ? 'Logística y saldos actuales cargados en los camiones de las cuadrillas.' : 'Control logístico y existencias físicas de la Alcaldía en metros cúbicos (m³)' }}</p>
+        <h2 v-if="userRole === 'Técnico' || userRole === 'Jefe de Cuadrilla'">🚚 Monitoreo de Insumos en Tránsito</h2>
+        <h2 v-else>📦 Almacén Central de Insumos Viales</h2>
+        
+        <p v-if="userRole === 'Técnico'">Logística y saldos actuales cargados en los camiones de las cuadrillas.</p>
+        <p v-else-if="userRole === 'Jefe de Cuadrilla'">Saldos actuales de insumos viales cargados en el camión de su equipo.</p>
+        <p v-else>Control logístico y existencias físicas de la Alcaldía en metros cúbicos (m³)</p>
       </div>
-      <div v-if="userRole !== 'Técnico'" class="d-flex gap-2">
+      <div v-if="userRole !== 'Técnico' && userRole !== 'Jefe de Cuadrilla'" class="d-flex gap-2">
         <button @click="mostrarFormDespacho = !mostrarFormDespacho" class="btn-dispatch">
           🚚 Despachar a Cuadrilla
         </button>
@@ -16,7 +19,6 @@
       </div>
     </div>
 
-    <!-- Formularios Administrativos (Ocultos por defecto para el Técnico) -->
     <div v-if="mostrarFormDespacho" class="form-new-material form-dispatch-border shadow-sm animated fadeIn">
       <div class="form-header">
         <h4>🚚 Entrega de Material y Carga de Camión</h4>
@@ -71,14 +73,12 @@
       </div>
     </div>
 
-    <!-- 🚚 MONITOREO EN CAMPO: El Técnico siempre ve este panel de control logístico -->
-    <div v-if="userRole === 'Técnico' || despachosActivos.length > 0" class="monitoring-box shadow-sm mb-4 animated fadeIn">
+    <div v-if="userRole === 'Técnico' || userRole === 'Jefe de Cuadrilla' || despachosActivos.length > 0" class="monitoring-box shadow-sm mb-4 animated fadeIn">
       <div class="monitoring-header">
-        <h4>🚚 Personal en Campo y Material en Tránsito (Hoy)</h4>
-        <p>Saldos actuales cargados en los camiones. El Técnico supervisa el material asignado a cada cuadrilla.</p>
+        <h4>{{ userRole === 'Jefe de Cuadrilla' ? '🚚 Estado de Carga de mi Camión (Hoy)' : '🚚 Personal en Campo y Material en Tránsito (Hoy)' }}</h4>
+        <p>{{ userRole === 'Jefe de Cuadrilla' ? 'Monitoreo de saldos de asfalto e insumos viales disponibles en ruta.' : 'Saldos actuales cargados en los camiones. El Técnico supervisa el material asignado a cada cuadrilla.' }}</p>
       </div>
 
-      <!-- SI EXISTEN DESPACHOS ACTIVOS: Renderizamos la tabla estructural -->
       <table v-if="despachosActivos.length > 0" class="table-monitoring">
         <thead>
           <tr>
@@ -86,8 +86,7 @@
             <th>Material Asignado</th>
             <th>Despachado Mañana</th>
             <th>Saldo Actual en Camión</th>
-            <!-- 🔥 CORRECCIÓN UX: Ocultamos la columna de Cierre para el Técnico -->
-            <th v-if="userRole !== 'Técnico'">Acción de Cierre</th>
+            <th v-if="userRole !== 'Técnico' && userRole !== 'Jefe de Cuadrilla'">Acción de Cierre</th>
           </tr>
         </thead>
         <tbody>
@@ -98,8 +97,7 @@
             <td>
               <b class="text-primary-balance">{{ parseFloat(desp.cantidad_actual).toFixed(2) }} m³</b>
             </td>
-            <!-- 🔥 CORRECCIÓN UX: Ocultamos el botón de Cierre de Jornada para el Técnico -->
-            <td v-if="userRole !== 'Técnico'">
+            <td v-if="userRole !== 'Técnico' && userRole !== 'Jefe de Cuadrilla'">
               <button @click="ejecutarCierreJornada(desp)" class="btn-close-jornada">
                 🌙 Cerrar Jornada
               </button>
@@ -108,15 +106,13 @@
         </tbody>
       </table>
 
-      <!-- 🔥 ESTADO VACÍO LOGÍSTICO: Alerta profesional si el Técnico ingresa y aún no hay camiones despachados -->
       <div v-else class="empty-trucks-alert">
         <i class="bi bi-info-circle-fill"></i>
         <span>No se registran cuadrillas operando con carga de asfalto en tránsito para la jornada de hoy.</span>
       </div>
     </div>
 
-    <!-- 🧱 TARJETAS DEL STOCK CENTRAL: Se ocultan por completo de la vista del Técnico -->
-    <div v-if="userRole !== 'Técnico'" class="grid-cards">
+    <div v-if="userRole !== 'Técnico' && userRole !== 'Jefe de Cuadrilla'" class="grid-cards">
       <div v-for="mat in materiales" :key="mat.id" class="mat-card" :class="{ 'low-stock': mat.stock_actual < 20 }">
         <div class="card-icon">
           {{ mat.nombre.includes('Asfalto') ? '⚫' : '🧱' }}
@@ -137,7 +133,6 @@
       </div>
     </div>
 
-    <!-- Modal de Edición Directa (Protegido por el v-if de las tarjetas) -->
     <div v-if="mostrarModalEditar" class="custom-modal-overlay animated fadeIn">
       <div class="custom-modal-box shadow-lg">
         <div class="modal-header-custom">
@@ -192,7 +187,7 @@ const config = { headers: { 'Authorization': `Bearer ${token}` } };
 const cargarInventario = async () => {
   try {
     const res = await axios.get('http://localhost:8000/api/materiales', config);
-    materiales.value = res.data;
+    materiales.value = Array.isArray(res.data) ? res.data : (res.data.data || []);
   } catch (error) {
     console.error("Error al conectar con el inventario S.D.B.:", error);
   }
@@ -201,7 +196,7 @@ const cargarInventario = async () => {
 const cargarCuadrillas = async () => {
   try {
     const res = await axios.get('http://localhost:8000/api/cuadrillas', config);
-    cuadrillas.value = res.data;
+    cuadrillas.value = Array.isArray(res.data) ? res.data : (res.data.data || []);
   } catch (error) {
     console.error("Error al recuperar las cuadrillas viales:", error);
   }
@@ -210,7 +205,7 @@ const cargarCuadrillas = async () => {
 const cargarDespachosActivos = async () => {
   try {
     const res = await axios.get('http://localhost:8000/api/cuadrillas-material/activos', config);
-    despachosActivos.value = res.data;
+    despachosActivos.value = Array.isArray(res.data) ? res.data : (res.data.data || []);
   } catch (error) {
     console.error("Error al cargar monitoreo de camiones:", error);
   }
@@ -306,8 +301,12 @@ const eliminarMaterial = async (id, nombre) => {
 };
 
 onMounted(() => {
-  cargarInventario();
-  cargarCuadrillas();
+  // 💡 ESCUDO PROTECTOR DE ROLES: Si es Jefe de Cuadrilla, evitamos descargar las listas globales
+  // administrativas de la alcaldía para saltarnos los rebotes 403 Forbidden.
+  if (userRole.value !== 'Jefe de Cuadrilla') {
+    cargarInventario();
+    cargarCuadrillas();
+  }
   cargarDespachosActivos(); 
 });
 </script>
@@ -344,7 +343,6 @@ onMounted(() => {
 .btn-close-jornada { background: #f39c12; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
 .btn-close-jornada:hover { background: #d35400; transform: translateY(-1px); }
 
-/* 🔥 ESTILOS PARA EL ESTADO VACÍO DE CAMIONES */
 .empty-trucks-alert { background-color: #ffffff; border: 2px dashed #cbd5e1; color: #64748b; padding: 35px; text-align: center; border-radius: 8px; font-weight: 500; display: flex; flex-direction: column; gap: 8px; align-items: center; justify-content: center; margin-top: 10px; }
 .empty-trucks-alert i { font-size: 2.2rem; color: #94a3b8; }
 

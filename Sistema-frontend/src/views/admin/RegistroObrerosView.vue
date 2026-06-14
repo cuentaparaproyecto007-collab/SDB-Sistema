@@ -1,7 +1,8 @@
 <template>
   <div class="gestion-container animate__animated animate__fadeIn">
     
-    <div v-if="sugerencia && !isEditing" class="alert-banner animate__animated animate__fadeIn">
+    <!-- 🛡️ El banner de sugerencias de balanceo solo se muestra al Administrador y Técnico -->
+    <div v-if="sugerencia && !isEditing && userRole !== 'Jefe de Cuadrilla'" class="alert-banner animate__animated animate__fadeIn">
       <div class="alert-content">
         <span class="icon">💡</span>
         <p><b>Sugerencia de Balanceo:</b> {{ sugerencia.mensaje }}</p>
@@ -11,7 +12,8 @@
 
     <div class="row-layout">
       
-      <aside class="form-sidebar">
+      <!-- 🛡️ SIDEBAR FORMULARIO: Oculto para el Jefe de Cuadrilla -->
+      <aside v-if="userRole !== 'Jefe de Cuadrilla'" class="form-sidebar">
         <div class="card shadow-soft">
           <div class="card-header" :class="{ 'bg-orange': isEditing }">
             <i class="icon">{{ isEditing ? '✏️' : '👷' }}</i> {{ isEditing ? 'Editar Obrero' : 'Registro Oficial de Obreros' }}
@@ -81,12 +83,13 @@
         </div>
       </aside>
 
-      <main class="table-content">
+      <!-- 📋 TABLA PRINCIPAL: Se expande al 100% automáticamente si es Jefe de Cuadrilla -->
+      <main class="table-content" :style="userRole === 'Jefe de Cuadrilla' ? 'flex: 1 1 100%;' : ''">
         <div class="card border-none">
           <div class="card-header bg-dark">
             <div class="header-flex">
-              <span><i class="icon">📋</i> Personal de Campo Activo</span>
-              <span class="count-badge">{{ filteredObreros.length }} de {{ obreros.length }} Obreros</span>
+              <span><i class="icon">📋</i> {{ userRole === 'Jefe de Cuadrilla' ? 'Lista Oficial de Mi Cuadrilla' : 'Personal de Campo Activo' }}</span>
+              <span class="count-badge">{{ filteredObreros.length }} Obreros</span>
             </div>
           </div>
           
@@ -94,7 +97,7 @@
             <input 
               v-model="searchQuery" 
               type="text" 
-              placeholder="🔍 Buscar por CI, nombre, especialidad o cuadrilla..." 
+              placeholder="🔍 Buscar por CI, nombre, especialidad..." 
               class="search-input"
             >
             <div class="export-buttons">
@@ -140,14 +143,16 @@
                   <td class="text-center">
                     <div class="btn-actions-group">
                       <button :disabled="loading" @click="verObrero(o.id)" class="btn-action btn-view" title="Ver perfil completo">👁️</button>
-                      <button :disabled="loading" @click="activarEdicion(o)" class="btn-action btn-edit" title="Editar datos">✏️</button>
-                      <button :disabled="loading" @click="eliminarObrero(o.id, `${o.nombres} ${o.apellido_paterno}`)" class="btn-action btn-delete" title="Dar de baja obrero">🗑️</button>
+                      
+                      <!-- 🛡️ Botones de escritura ocultos para el Jefe de Cuadrilla -->
+                      <button v-if="userRole !== 'Jefe de Cuadrilla'" :disabled="loading" @click="activarEdicion(o)" class="btn-action btn-edit" title="Editar datos">✏️</button>
+                      <button v-if="userRole !== 'Jefe de Cuadrilla'" :disabled="loading" @click="eliminarObrero(o.id, `${o.nombres} ${o.apellido_paterno}`)" class="btn-action btn-delete" title="Dar de baja obrero">🗑️</button>
                     </div>
                   </td>
                 </tr>
                 <tr v-if="filteredObreros.length === 0 && !loading">
                   <td colspan="5" class="empty-state">
-                    No se encontraron obreros que coincidan con la búsqueda.
+                    No se encontraron miembros registrados en el equipo.
                   </td>
                 </tr>
               </tbody>
@@ -158,6 +163,7 @@
 
     </div>
 
+    <!-- Modal de Detalles -->
     <div v-if="modalDetalle" class="modal-overlay animate__animated animate__fadeIn">
       <div class="modal-card animate__animated animate__zoomIn">
         <div class="modal-header">
@@ -189,6 +195,8 @@
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 
+const userRole = ref(localStorage.getItem('role'));
+
 const loading = ref(false);
 const cuadrillas = ref([]);
 const obreros = ref([]);
@@ -218,14 +226,30 @@ const filteredObreros = computed(() => {
 const cargarDatos = async () => {
   try {
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    const resC = await axios.get('http://localhost:8000/api/cuadrillas', config);
-    cuadrillas.value = resC.data;
+    
+    // 🛡️ ESCUDO ANTI-403: El Jefe de Cuadrilla no necesita descargar la lista de cuadrillas ni sugerencias
+    if (userRole.value !== 'Jefe de Cuadrilla') {
+      const resC = await axios.get('http://localhost:8000/api/cuadrillas', config);
+      cuadrillas.value = resC.data;
+      
+      const resS = await axios.get('http://localhost:8000/api/cuadrillas/sugerencia', config);
+      if (resS.data.sugerencia) { 
+        sugerencia.value = { id: resS.data.sugerencia.id, mensaje: resS.data.mensaje }; 
+      } else { 
+        sugerencia.value = null; 
+      }
+    } else {
+      cuadrillas.value = [];
+      sugerencia.value = null;
+    }
+    
+    // Esto se ejecuta para todos (el backend se encargará de filtrar los obreros si es Jefe)
     const resO = await axios.get('http://localhost:8000/api/obreros', config);
     obreros.value = resO.data;
-    const resS = await axios.get('http://localhost:8000/api/cuadrillas/sugerencia', config);
-    if (resS.data.sugerencia) { sugerencia.value = { id: resS.data.sugerencia.id, mensaje: resS.data.mensaje }; }
-    else { sugerencia.value = null; }
-  } catch (e) { console.error(e); }
+
+  } catch (e) { 
+    console.error("Error cargando personal:", e); 
+  }
 };
 
 // EXPORTACIÓN EXCEL
@@ -339,8 +363,11 @@ const guardarObrero = async () => {
       resetForm();
     }
     await cargarDatos();
-  } catch (e) { alert(e.response?.data?.message || "Error al procesar la operación."); }
-  finally { loading.value = false; }
+  } catch (e) { 
+    alert(e.response?.data?.message || "Error al procesar la operación."); 
+  } finally { 
+    loading.value = false; 
+  }
 };
 
 const activarEdicion = (obrero) => {
@@ -350,6 +377,7 @@ const activarEdicion = (obrero) => {
 };
 
 const cancelarEdicion = () => { isEditing.value = false; editingId.value = null; resetForm(); };
+
 const verObrero = async (id) => {
   loading.value = true;
   try {
@@ -357,8 +385,11 @@ const verObrero = async (id) => {
     const res = await axios.get(`http://localhost:8000/api/obreros/${id}`, config);
     obreroSeleccionado.value = res.data;
     modalDetalle.value = true;
-  } catch (e) { alert("No se pudo obtener el expediente del trabajador."); }
-  finally { loading.value = false; }
+  } catch (e) { 
+    alert("No se pudo obtener el expediente del trabajador."); 
+  } finally { 
+    loading.value = false; 
+  }
 };
 
 const eliminarObrero = async (id, nombreCompleto) => {
@@ -392,7 +423,6 @@ onMounted(cargarDatos);
 .form-sidebar { flex: 1; min-width: 320px; }
 .table-content { flex: 2; min-width: 500px; transition: all 0.3s ease; }
 
-/* 🔥 REINCORPORADO: ESTILOS DE LA NUEVA BARRA DE HERRAMIENTAS DE CONTROL */
 .toolbar-table { display: flex; gap: 12px; padding: 15px 20px; background: #fafafa; border-bottom: 1px solid #edf2f7; align-items: center; justify-content: space-between; }
 .search-input { flex: 1; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem; }
 .search-input:focus { border-color: #42b983; background: white; outline: none; }
@@ -405,7 +435,6 @@ onMounted(cargarDatos);
 .btn-pdf:hover:not(:disabled) { background: #c0392b; transform: translateY(-1px); }
 .btn-pdf:disabled, .btn-excel:disabled { background: #cbd5e0; cursor: not-allowed; transform: none; }
 
-/* 🔥 SOLUCIÓN: CLASES DEL BANNER DE SUGERENCIA RESTAURADAS */
 .alert-banner { background: #e3f2fd; border-left: 5px solid #2196f3; padding: 15px; margin-bottom: 25px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; width: 100%; }
 .alert-content { display: flex; align-items: center; gap: 12px; }
 .alert-content p { margin: 0; color: #0d47a1; font-size: 0.95rem; }

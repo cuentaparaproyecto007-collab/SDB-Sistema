@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\CuadrillaMaterial;
 use App\Models\Material; // Para consultar y restar el stock global
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth; // 🔥 NUEVO: Importamos el Facade de Auth para validar las sesiones
 
 class CuadrillaMaterialController extends Controller
 {
@@ -42,7 +43,8 @@ class CuadrillaMaterialController extends Controller
                 'cuadrilla_id'        => $request->cuadrilla_id,
                 'material_id'         => $request->material_id,
                 'cantidad_despachada' => $request->cantidad,
-                'cantidad_actual'     => $request->cantidad, // Al iniciar la mañana, el saldo actual es igual al despachado
+                'amount_actual'       => $request->cantidad, // Al iniciar la mañana, el saldo actual es igual al despachado
+                'cantidad_actual'     => $request->cantidad, 
                 'fecha'               => now()->toDateString(), // Fecha del día de hoy
                 'estado'              => 'Activo',
             ]);
@@ -57,7 +59,6 @@ class CuadrillaMaterialController extends Controller
 
     /**
      * FASE 2: Restar material en tránsito (Camión -> Bache Reparado)
-     * Este método se llamará automáticamente desde el frontend o el controlador de baches cuando se repare uno.
      */
     public function restarMaterialTransito(Request $request)
     {
@@ -155,15 +156,34 @@ class CuadrillaMaterialController extends Controller
 
     /**
      * Monitoreo: Listar los despachos que están actualmente activos en la calle hoy
+     * ✅ DETERMINADO CON ELOQUENT: Filtro exacto usando la columna 'jefe_id'
      */
     public function obtenerDespachosActivos()
     {
-        // Recuperamos los registros activos cargando las relaciones para ver los nombres
-        $activos = CuadrillaMaterial::with(['cuadrilla', 'material'])
+        $user = Auth::user();
+        
+        // Iniciamos la consulta base cargando las relaciones estructurales
+        $query = CuadrillaMaterial::with(['cuadrilla', 'material'])
             ->where('estado', 'Activo')
-            ->whereDate('fecha', now()->toDateString())
-            ->get();
+            ->whereDate('fecha', now()->toDateString());
 
+        // 💡 CONTROL DE ACCESO OPERATIVO: Si es Jefe de Cuadrilla, filtramos directo por su clave foránea oficial
+        if ($user && $user->role && $user->role->nombre === 'Jefe de Cuadrilla') {
+            
+            // Consultamos usando el modelo Cuadrilla y la columna exacta que confirmamos 'jefe_id'
+            $cuadrilla = \App\Models\Cuadrilla::where('jefe_id', $user->id)->first();
+
+            if ($cuadrilla) {
+                // El jefe únicamente puede auditar el saldo físico de su propio camión
+                $query->where('cuadrilla_id', $cuadrilla->id);
+            } else {
+                // Si el usuario es jefe pero aún no se le ha creado su cuadrilla, retornamos vacío seguro
+                return response()->json([], 200);
+            }
+        }
+
+        // El Administrador y Técnico siguen obteniendo el monitoreo de toda la flota municipal
+        $activos = $query->get();
         return response()->json($activos, 200);
     }
 }

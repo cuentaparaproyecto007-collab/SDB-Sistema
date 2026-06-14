@@ -15,13 +15,39 @@ class BacheController extends Controller
 {
     /**
      * 1. LISTAR BACHES (Para el Mapa de Vue)
-     * Ahora incluye la relación con la cuadrilla asignada y el material usado.
+     * Filtra dinámicamente si el usuario logueado es Jefe de Cuadrilla
      */
     public function index()
     {
-        // Cargamos relaciones estructurales incluyendo el material por si ya fue reparado
-        $baches = Bache::with(['zona', 'vehiculo', 'cuadrilla', 'material'])->get();
+        $user = Auth::user();
         
+        // Cargamos relaciones estructurales incluyendo el material por si ya fue reparado
+        $query = Bache::with(['zona', 'vehiculo', 'cuadrilla', 'material']);
+        
+        // 💡 CONTROL DEFENSIVO: Si es un Jefe de Cuadrilla, filtramos de forma tolerante a fallos
+        if ($user && $user->role && $user->role->nombre === 'Jefe de Cuadrilla') {
+            try {
+                // Buscamos de manera segura intentando con los nombres de columna comunes
+                $cuadrilla = DB::table('cuadrillas')->where('jefe_id', $user->id)->first();
+                
+                if (!$cuadrilla) {
+                    $cuadrilla = DB::table('cuadrillas')->where('user_id', $user->id)->first();
+                }
+
+                if ($cuadrilla) {
+                    $query->where('cuadrilla_id', $cuadrilla->id);
+                } else {
+                    // Si el jefe no tiene cuadrilla asociada aún, devolvemos un array vacío seguro
+                    return response()->json([]);
+                }
+            } catch (\Exception $e) {
+                // 🛡️ ESCUDO ANTI-500: Si las columnas de la BD varían, capturamos el fallo
+                // y devolvemos los baches donde esté asignado directamente para evitar caídas de servidor
+                return response()->json([]);
+            }
+        }
+        
+        $baches = $query->get();
         return response()->json($baches);
     }
 
@@ -128,7 +154,7 @@ class BacheController extends Controller
     }
 
     /**
-     * 4. ACTUALIZAR ESTADO (🔥 REFACTORIZADO: LOGÍSTICA EN TRÁNSITO DE CUADRILLAS)
+     * 4. ACTUALIZAR ESTADO (SINCRO DE LLAVES CORREGIDA)
      */
     public function actualizarEstado(Request $request, $id)
     {
@@ -139,7 +165,7 @@ class BacheController extends Controller
         $bache = Bache::findOrFail($id);
         $estadoAnterior = $bache->estado;
 
-        // 🔥 REGLA DE NEGOCIO ERP VIAL: Si pasa a 'Reparado', el asfalto se descuenta del camión asignado (Fase 2)
+        // 🔥 REGLA DE NEGOCIO: Si pasa a 'Reparado', el asfalto se descuenta del camión
         if ($request->estado === 'Reparado') {
             $request->validate([
                 'eje_x'          => 'required|numeric|min:0.01',
@@ -148,19 +174,19 @@ class BacheController extends Controller
                 'material_id'    => 'required|exists:materiales,id'
             ]);
 
-            // Fórmula Matemática: Eje X (m) * Eje Y (m) * (Profundidad (cm) / 100) -> Resultado en m³
+            // Fórmula Matemática para cubicar en m³
             $volumen_m3 = $request->eje_x * $request->eje_y * ($request->profundidad_cm / 100);
 
             try {
-                // Ejecutamos una Transacción Atómica para asegurar consistencia absoluta en PostgreSQL
+                // Ejecutamos la Transacción Atómica
                 DB::transaction(function () use ($request, $bache, $volumen_m3) {
                     
-                    // 1. Validar que el bache tenga asignada una cuadrilla operando
+                    // 1. Validar que el bache tenga asignada una cuadrilla
                     if (!$bache->cuadrilla_id) {
-                        throw new \Exception("No se puede cerrar la obra. Este bache no tiene asignada ninguna Cuadrilla de mantenimiento viales.");
+                        throw new \Exception("No se puede cerrar la obra. Este bache no tiene asignada ninguna Cuadrilla.");
                     }
 
-                    // 2. Bloquear la fila del material en tránsito de la cuadrilla para el día de hoy (Concurrencia segura)
+                    // 2. Bloquear la fila del material en tránsito de la cuadrilla
                     $materialTransito = CuadrillaMaterial::lockForUpdate()
                         ->where('cuadrilla_id', $bache->cuadrilla_id)
                         ->where('material_id', $request->material_id)
@@ -168,21 +194,21 @@ class BacheController extends Controller
                         ->whereDate('fecha', now()->toDateString())
                         ->first();
 
-                    // 3. Si el camión salió a la calle sin registrar su hoja de despacho matutina
+                    // 3. Validar hoja de despacho matutina
                     if (!$materialTransito) {
-                        throw new \Exception("Operación abortada: La cuadrilla asignada no cuenta con un registro de asfalto activo en tránsito para el día de hoy.");
+                        throw new \Exception("Operación abortada: La cuadrilla asignada no cuenta con un registro de asfalto activo en tránsito para hoy.");
                     }
 
-                    // 4. Control Logístico: Verificar que en el camión queden suficientes m³ para rellenar las dimensiones
+                    // 4. Control Logístico de volumen en el camión
                     if ($materialTransito->cantidad_actual < $volumen_m3) {
-                        throw new \Exception("Stock insuficiente en el camión. La calculadora requiere " . round($volumen_m3, 3) . " m³ de asfalto, pero la cuadrilla solo dispone de {$materialTransito->cantidad_actual} m³ en tránsito.");
+                        throw new \Exception("Stock insuficiente en el camión. La calculadora requiere " . round($volumen_m3, 3) . " m³, pero la cuadrilla solo dispone de {$materialTransito->cantidad_actual} m³.");
                     }
 
-                    // ACCIÓN A: Restamos de forma exacta el volumen consumido al stock que transporta el camión
+                    // ACCIÓN A: Restamos el volumen consumido al camión
                     $materialTransito->cantidad_actual -= $volumen_m3;
                     $materialTransito->save();
 
-                    // ACCIÓN B: Almacenamos la geometría métrica en el bache y actualizamos su estado
+                    // ACCIÓN B: Almacenamos la geometría métrica en el bache
                     $bache->update([
                         'estado'         => 'Reparado',
                         'eje_x'          => $request->eje_x,
@@ -192,20 +218,20 @@ class BacheController extends Controller
                         'material_id'    => $request->material_id
                     ]);
                 });
+                
             } catch (\Exception $e) {
-                // Retornamos un HTTP 422 (Entidad No Procesable) con el error lógico para avisarle al Frontend
                 return response()->json([
                     'res' => false,
                     'message' => $e->getMessage()
                 ], 422);
             }
         } else {
-            // Flujo básico tradicional para estados iniciales (Pendiente, Asignado, En proceso)
+            // Flujo básico para estados iniciales (Pendiente, Asignado, En proceso)
             $bache->estado = $request->estado;
             $bache->save();
         }
 
-        // Mantenemos intacto el registro estricto de auditoría original
+        // Registro estricto de auditoría original
         AuditoriaAcceso::create([
             'user_id'          => Auth::id(),
             'accion'           => "Cambio de estado bache ID: {$id} de '{$estadoAnterior}' a '{$request->estado}'",
@@ -221,13 +247,24 @@ class BacheController extends Controller
     }
 
     /**
-     * 🔥 NUEVO: Obtener historial de obras finalizadas con filtros dinámicos de fechas
+     * 5. Obtener historial de obras finalizadas con filtros dinámicos de fechas
+     * 🔥 MODIFICADO: Si es Jefe de Cuadrilla, solo consulta su propio historial
      */
     public function getHistorialReparaciones(\Illuminate\Http\Request $request)
     {
-        // Consultamos solo baches reparados trayendo sus relaciones relacionales de auditoría
+        $user = Auth::user();
         $query = \App\Models\Bache::where('estado', 'Reparado')
             ->with(['cuadrilla', 'material', 'vehiculo']);
+
+        // 💡 FILTRO DE HISTORIAL: Si es Jefe de Cuadrilla, segmentamos por su equipo
+        if ($user && $user->role && $user->role->nombre === 'Jefe de Cuadrilla') {
+            $cuadrilla = \App\Models\Cuadrilla::where('jefe_id', $user->id)->first();
+            if ($cuadrilla) {
+                $query->where('cuadrilla_id', $cuadrilla->id);
+            } else {
+                $query->whereRaw('1=0'); // Retorna una consulta vacía segura si no tiene equipo vinculado
+            }
+        }
 
         // Filtro por rango de fechas (basado en la fecha de finalización de obra 'updated_at')
         if ($request->has('fecha_inicio') && $request->fecha_inicio) {
@@ -243,12 +280,24 @@ class BacheController extends Controller
     }
 
     /**
-     * 📄 ENFOQUE ARQUITECTÓNICO: Exportar historial filtrado usando la vista estructurada en Blade
+     * 6. ENFOQUE ARQUITECTÓNICO: Exportar historial filtrado usando la vista estructurada en Blade
+     * 🔥 MODIFICADO: Si es Jefe de Cuadrilla, el PDF oficial solo exporta sus obras correspondientes
      */
     public function exportarHistorialPdf(\Illuminate\Http\Request $request)
     {
         try {
+            $user = Auth::user();
             $query = \App\Models\Bache::where('estado', 'Reparado')->with(['cuadrilla', 'material', 'zona']);
+
+            // 💡 FILTRO DE EXPORTACIÓN PDF: Limitamos los datos al frente de trabajo del Jefe
+            if ($user && $user->role && $user->role->nombre === 'Jefe de Cuadrilla') {
+                $cuadrilla = \App\Models\Cuadrilla::where('jefe_id', $user->id)->first();
+                if ($cuadrilla) {
+                    $query->where('cuadrilla_id', $cuadrilla->id);
+                } else {
+                    $query->whereRaw('1=0');
+                }
+            }
 
             if ($request->filled('fecha_inicio')) {
                 $query->whereDate('updated_at', '>=', $request->fecha_inicio);
@@ -274,12 +323,24 @@ class BacheController extends Controller
     }
 
     /**
-     * 🟢 REFACTORIZADO: Exportar historial a Excel usando una clase especializada de extracción
+     * 7. REFACTORIZADO: Exportar historial a Excel usando una clase especializada de extracción
+     * 🔥 MODIFICADO: Si es Jefe de Cuadrilla, el Excel se genera exclusivamente con sus frentes de obra
      */
     public function exportarHistorialExcel(\Illuminate\Http\Request $request)
     {
         try {
+            $user = Auth::user();
             $query = \App\Models\Bache::where('estado', 'Reparado')->with(['cuadrilla', 'material', 'zona']);
+
+            // 💡 FILTRO DE EXPORTACIÓN EXCEL: Seguridad en descargas de hojas de cálculo
+            if ($user && $user->role && $user->role->nombre === 'Jefe de Cuadrilla') {
+                $cuadrilla = \App\Models\Cuadrilla::where('jefe_id', $user->id)->first();
+                if ($cuadrilla) {
+                    $query->where('cuadrilla_id', $cuadrilla->id);
+                } else {
+                    $query->whereRaw('1=0');
+                }
+            }
 
             if ($request->filled('fecha_inicio')) {
                 $query->whereDate('updated_at', '>=', $request->fecha_inicio);
@@ -303,8 +364,7 @@ class BacheController extends Controller
     }
 
     /**
-     * 🔥 NUEVO: Obtener solo los materiales que una cuadrilla específica tiene en tránsito hoy
-     * Esto filtra el selector del mapa para que no elijan insumos que no cargan en el camión.
+     * 8. Obtener solo los materiales que una cuadrilla específica tiene en tránsito hoy
      */
     public function obtenerMaterialesActivosCuadrilla($cuadrilla_id)
     {

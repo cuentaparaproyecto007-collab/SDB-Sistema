@@ -9,9 +9,13 @@ use Illuminate\Support\Facades\Auth;
 
 class MaterialController extends Controller
 {
-    public function index()
+   public function index()
     {
-        return response()->json(Material::all());
+        // 💡 Corregido: Envolvemos el resultado en la estructura oficial del proyecto
+        return response()->json([
+            'res'  => true,
+            'data' => Material::all()
+        ]);
     }
 
     public function store(Request $request)
