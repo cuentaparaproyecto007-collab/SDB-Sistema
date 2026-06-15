@@ -55,14 +55,14 @@ const fetchAndRenderMarkers = async () => {
     const config = { headers: { 'Authorization': `Bearer ${token}` } };
     
     if (userRole.value === 'Jefe de Cuadrilla') {
-      const resBaches = await axios.get('http://localhost:8000/api/baches', config);
+      const resBaches = await axios.get('https://sdb-sistema-production.up.railway.app/api/baches', config);
       // 💡 CORREGIDO: Ahora el jefe solo ve sus baches pendientes, asignados o en proceso
       baches.value = resBaches.data.filter(bache => bache.estado !== 'Reparado');
       cuadrillas.value = [];
       materiales.value = [];
     } else {
       const [resBaches, resCuadrillas, resMateriales] = await Promise.all([
-        axios.get('http://localhost:8000/api/baches', config),
+        axios.get('https://sdb-sistema-production.up.railway.app/api/baches', config),
         axios.get('http://localhost:8000/api/cuadrillas', config),
         axios.get('http://localhost:8000/api/materiales', config)
       ]);
@@ -249,7 +249,7 @@ const finalizarReparacion = async (id, x, y, prof, materialId) => {
       material_id: parseInt(materialId)
     };
 
-    await axios.put(`http://localhost:8000/api/baches/${id}/estado`, payload, config);
+    await axios.put(`https://sdb-sistema-production.up.railway.app/api/baches/${id}/estado`, payload, config);
     alert("🎉 ¡Bache reparado con éxito! Se calculó y descontó el volumen físico del camión en tránsito de la cuadrilla.");
     await fetchAndRenderMarkers(); 
   } catch (error) {
@@ -264,7 +264,7 @@ const finalizarReparacion = async (id, x, y, prof, materialId) => {
 const asignarEquipo = async (bacheId, cuadrillaId) => {
   if (!cuadrillaId) return alert("Por favor, selecciona una cuadrilla");
   try {
-    await axios.put(`http://localhost:8000/api/baches/${bacheId}/asignar-cuadrilla`, 
+    await axios.put(`https://sdb-sistema-production.up.railway.app/api/baches/${bacheId}/asignar-cuadrilla`,
       { cuadrilla_id: cuadrillaId }, 
       { headers: { 'Authorization': `Bearer ${token}` } }
     );
@@ -278,7 +278,7 @@ const asignarEquipo = async (bacheId, cuadrillaId) => {
 const cambiarEstado = async (id, nuevoEstado) => {
   if (!confirm(`¿Desea cambiar el estado del bache ID: ${id} a '${nuevoEstado}'?`)) return;
   try {
-    await axios.put(`http://localhost:8000/api/baches/${id}/estado`, 
+    await axios.put(`https://sdb-sistema-production.up.railway.app/api/baches/${id}/estado`,
       { estado: nuevoEstado }, 
       { headers: { 'Authorization': `Bearer ${token}` } }
     );

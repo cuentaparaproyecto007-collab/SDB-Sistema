@@ -95,7 +95,7 @@ const cargarHistorial = async () => {
       fecha_inicio: fechaInicio.value,
       fecha_fin: fechaFin.value
     };
-    const res = await axios.get('http://localhost:8000/api/baches-historial', { ...config, params });
+    const res = await axios.get('https://sdb-sistema-production.up.railway.app/api/baches-historial', { ...config, params });
     historial.value = res.data;
   } catch (error) {
     console.error("Error al recuperar el historial vial:", error);
@@ -105,7 +105,7 @@ const cargarHistorial = async () => {
 // 🔥 NUEVO: Función para descargar PDF aplicando filtros activos
 const exportarPDF = async () => {
   try {
-    const res = await axios.get('http://localhost:8000/api/baches-historial-pdf', {
+    const res = await axios.get('https://sdb-sistema-production.up.railway.app/api/baches-historial-pdf', {
       ...config,
       params: { fecha_inicio: fechaInicio.value, fecha_fin: fechaFin.value },
       responseType: 'blob'
@@ -125,7 +125,7 @@ const exportarPDF = async () => {
 // 🔥 NUEVO: Función para descargar Excel aplicando filtros activos
 const exportarExcel = async () => {
   try {
-    const res = await axios.get('http://localhost:8000/api/baches-historial-excel', {
+    const res = await axios.get('https://sdb-sistema-production.up.railway.app/api/baches-historial-excel', {
       ...config,
       params: { fecha_inicio: fechaInicio.value, fecha_fin: fechaFin.value },
       responseType: 'blob'
