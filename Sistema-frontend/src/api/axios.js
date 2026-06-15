@@ -2,7 +2,7 @@ import axios from 'axios';
 import { isBackendDown } from '../services/networkState'; // 🔥 NUEVO: Importamos el guardián reactivo
 
 const api = axios.create({
-    baseURL: (import.meta.env?.VITE_API_BASE_URL || process.env?.VUE_APP_API_URL || 'http://127.0.0.1:8000') + '/api',
+    baseURL: 'https://sdb-sistema-production.up.railway.app/api',
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
