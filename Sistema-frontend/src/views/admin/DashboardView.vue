@@ -104,7 +104,7 @@ const config = { headers: { 'Authorization': `Bearer ${token}` } };
 
 const cargarDashboard = async () => {
   try {
-    const res = await axios.get('http://localhost:8000/api/dashboard-stats', config);
+    const res = await axios.get('https://sdb-sistema-production.up.railway.app/api/dashboard-stats', config);
     
     // 💡 INTERCEPTOR INTERNO: Si el backend reporta un fallo controlado, saltamos el cavernícola
     if (res.data.res === false) {
