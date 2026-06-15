@@ -63,8 +63,8 @@ const fetchAndRenderMarkers = async () => {
     } else {
       const [resBaches, resCuadrillas, resMateriales] = await Promise.all([
         axios.get('https://sdb-sistema-production.up.railway.app/api/baches', config),
-        axios.get('http://localhost:8000/api/cuadrillas', config),
-        axios.get('http://localhost:8000/api/materiales', config)
+        axios.get('https://sdb-sistema-production.up.railway.app/api/cuadrillas', config),
+        axios.get('https://sdb-sistema-production.up.railway.app/api/materiales', config)
       ]);
       baches.value = resBaches.data.filter(bache => bache.estado !== 'Reparado');
       cuadrillas.value = resCuadrillas.data;
