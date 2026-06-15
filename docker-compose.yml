@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # Base de Datos PostgreSQL
+  # --- 🗄️ BASE DE DATOS POSTGRESQL ---
   database:
     image: postgres:15-alpine
     container_name: sdb-database
@@ -9,15 +9,13 @@ services:
     environment:
       POSTGRES_DB: proyecto
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: "1245678910"
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: "12345678910" # 🔑 Forzado explícito con el número 3
     volumes:
       - sdb_db_data:/var/lib/postgresql/data
     networks:
       - sdb-network
 
-  # Servicio Backend / API REST (Laravel)
+  # --- 🧠 SERVICIO BACKEND (Laravel API) ---
   backend:
     build:
       context: ./Sistema-backend
@@ -29,16 +27,18 @@ services:
     ports:
       - "8000:8000"
     environment:
+      APP_ENV: production
+      APP_DEBUG: 'false'
       DB_CONNECTION: pgsql
       DB_HOST: database
       DB_PORT: 5432
       DB_DATABASE: proyecto
       DB_USERNAME: postgres
-      DB_PASSWORD: "1245678910"
+      DB_PASSWORD: "12345678910" # 🔑 Emparejado exactamente con la base de datos
     networks:
       - sdb-network
 
-  # Servicio Cliente / Frontend (Vue)
+  # --- 💻 SERVICIO CLIENTE (Vue 3 + NGINX) ---
   frontend:
     build:
       context: ./Sistema-frontend
