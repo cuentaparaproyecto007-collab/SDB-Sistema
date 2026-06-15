@@ -229,10 +229,10 @@ const cargarDatos = async () => {
     
     // 🛡️ ESCUDO ANTI-403: El Jefe de Cuadrilla no necesita descargar la lista de cuadrillas ni sugerencias
     if (userRole.value !== 'Jefe de Cuadrilla') {
-      const resC = await axios.get('http://localhost:8000/api/cuadrillas', config);
+      const resC = await axios.get('https://sdb-sistema-production.up.railway.app/api/cuadrillas', config);
       cuadrillas.value = resC.data;
       
-      const resS = await axios.get('http://localhost:8000/api/cuadrillas/sugerencia', config);
+      const resS = await axios.get('https://sdb-sistema-production.up.railway.app/api/cuadrillas/sugerencia', config);
       if (resS.data.sugerencia) { 
         sugerencia.value = { id: resS.data.sugerencia.id, mensaje: resS.data.mensaje }; 
       } else { 
@@ -244,7 +244,7 @@ const cargarDatos = async () => {
     }
     
     // Esto se ejecuta para todos (el backend se encargará de filtrar los obreros si es Jefe)
-    const resO = await axios.get('http://localhost:8000/api/obreros', config);
+    const resO = await axios.get('https://sdb-sistema-production.up.railway.app/api/obreros', config);
     obreros.value = resO.data;
 
   } catch (e) { 
@@ -354,11 +354,11 @@ const guardarObrero = async () => {
   const config = { headers: { Authorization: `Bearer ${token}` } };
   try {
     if (isEditing.value) {
-      await axios.put(`http://localhost:8000/api/obreros/${editingId.value}`, form.value, config);
+      await axios.put(`https://sdb-sistema-production.up.railway.app/api/obreros/${editingId.value}`, form.value, config);
       alert("Datos del obrero actualizados con éxito.");
       cancelarEdicion();
     } else {
-      await axios.post('http://localhost:8000/api/obreros', form.value, config);
+      await axios.post('https://sdb-sistema-production.up.railway.app/api/obreros', form.value, config);
       alert("Obrero registrado y auditado correctamente");
       resetForm();
     }
@@ -382,7 +382,7 @@ const verObrero = async (id) => {
   loading.value = true;
   try {
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    const res = await axios.get(`http://localhost:8000/api/obreros/${id}`, config);
+    const res = await axios.get(`https://sdb-sistema-production.up.railway.app/api/obreros/${id}`, config);
     obreroSeleccionado.value = res.data;
     modalDetalle.value = true;
   } catch (e) { 
@@ -399,7 +399,7 @@ const eliminarObrero = async (id, nombreCompleto) => {
   loading.value = true;
   try {
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    const res = await axios.delete(`http://localhost:8000/api/obreros/${id}`, config);
+    const res = await axios.delete(`https://sdb-sistema-production.up.railway.app/api/obreros/${id}`, config);
     
     alert(res.data.message || "Obrero dado de baja con éxito.");
     

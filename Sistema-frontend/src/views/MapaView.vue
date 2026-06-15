@@ -175,7 +175,7 @@ const fetchAndRenderMarkers = async () => {
         if (bache.cuadrilla_id) {
           selectMat.innerHTML = '<option value="">⏳ Cargando materiales del camión...</option>';
           
-          axios.get(`http://localhost:8000/api/cuadrillas/${bache.cuadrilla_id}/materiales-activos`, config)
+          axios.get(`https://sdb-sistema-production.up.railway.app/api/cuadrillas/${bache.cuadrilla_id}/materiales-activos`, config)
             .then(res => {
               selectMat.innerHTML = '<option value="">-- Seleccionar Insumo (En Camión) --</option>';
               if (res.data.length === 0) {

@@ -222,7 +222,7 @@ const cargarReporte = async () => {
   reportData.value = null;
 
   try {
-    const url = `http://localhost:8000/api/reportes-datos?tipo=${tipoReporte.value}&fecha_inicio=${fechaInicio.value}&fecha_fin=${fechaFin.value}`;
+    const url = `https://sdb-sistema-production.up.railway.app/api/reportes-datos?tipo=${tipoReporte.value}&fecha_inicio=${fechaInicio.value}&fecha_fin=${fechaFin.value}`;
     const res = await axios.get(url, config);
     if (res.data.res) {
       reportData.value = res.data.datos;

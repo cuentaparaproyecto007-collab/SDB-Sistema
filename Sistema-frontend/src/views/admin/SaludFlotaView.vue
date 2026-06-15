@@ -141,7 +141,7 @@ const historialReparaciones = ref([]);
 
 const cargarDiagnosticos = async () => {
   try {
-    const res = await axios.get('http://localhost:8000/api/vehiculos-salud-flota', config);
+    const res = await axios.get('https://sdb-sistema-production.up.railway.app/api/vehiculos-salud-flota', config);
     flota.value = res.data;
   } catch (error) {
     console.error("Error al recopilar la analítica de suspensión IoT:", error);
@@ -153,7 +153,7 @@ const abrirHistorial = async (veh) => {
   mostrarModal.value = true;
   cargandoHistorial.value = true;
   try {
-    const res = await axios.get(`http://localhost:8000/api/vehiculos/${veh.id}/historial-mantenimientos`, config);
+    const res = await axios.get(`https://sdb-sistema-production.up.railway.app/api/vehiculos/${veh.id}/historial-mantenimientos`, config);
     historialReparaciones.value = res.data.historial; 
   } catch (error) {
     console.error("Error al recuperar expediente clínico del vehículo:", error);
@@ -165,7 +165,7 @@ const abrirHistorial = async (veh) => {
 // 🔥 NUEVA FUNCIÓN: Descarga binaria segura mediante Blobs con cabeceras Auth
 const generarHistorialPDF = async (id) => {
   try {
-    const response = await axios.get(`http://localhost:8000/api/vehiculos/${id}/exportar-historial-pdf`, {
+    const response = await axios.get(`https://sdb-sistema-production.up.railway.app/api/vehiculos/${id}/exportar-historial-pdf`, {
       headers: { 'Authorization': `Bearer ${token}` },
       responseType: 'blob' // 👈 Indispensable para descarga de archivos binarios
     });

@@ -267,8 +267,8 @@ const getHeaders = () => ({ headers: { Authorization: `Bearer ${localStorage.get
 const fetchData = async () => {
   try {
     const [u, r] = await Promise.all([
-      axios.get('http://localhost:8000/api/users', getHeaders()),
-      axios.get('http://localhost:8000/api/roles', getHeaders())
+      axios.get('https://sdb-sistema-production.up.railway.app/api/users', getHeaders()),
+      axios.get('https://sdb-sistema-production.up.railway.app/api/roles', getHeaders())
     ]);
     users.value = u.data;
     roles.value = r.data;
@@ -404,7 +404,7 @@ const cancelEdit = () => { resetForm(); currentTab.value = 'lista'; };
 
 const saveUser = async () => {
   loading.value = true;
-  const url = isEditing.value ? `http://localhost:8000/api/users/${editingUserId.value}` : 'http://localhost:8000/api/users';
+  const url = isEditing.value ? `https://sdb-sistema-production.up.railway.app/api/users/${editingUserId.value}` : 'https://sdb-sistema-production.up.railway.app/api/users';
   const method = isEditing.value ? 'put' : 'post';
 
   try {
@@ -421,7 +421,7 @@ const deleteUser = async (id) => {
   if (id === currentUserId.value) return alert("🚫 No puedes eliminarte a ti mismo.");
   if (!confirm("¿Deseas eliminar a este usuario permanentemente?")) return;
   try {
-    await axios.delete(`http://localhost:8000/api/users/${id}`, getHeaders());
+    await axios.delete(`https://sdb-sistema-production.up.railway.app/api/users/${id}`, getHeaders());
     users.value = users.value.filter(u => u.id !== id);
   } catch (e) { alert("Error al eliminar"); }
 };

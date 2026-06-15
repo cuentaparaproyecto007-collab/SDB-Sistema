@@ -138,7 +138,7 @@ const dispararSimulacion = async (fuerza) => {
   payload.value.fuerza_g = fuerza;
 
   try {
-    const response = await axios.post('http://localhost:8000/api/telemetria/detectar', payload.value);
+    const response = await axios.post('https://sdb-sistema-production.up.railway.app/api/telemetria/detectar', payload.value);
     respuestaServidor.value = response.data;
   } catch (error) {
     console.error("Error en la telemetría:", error);

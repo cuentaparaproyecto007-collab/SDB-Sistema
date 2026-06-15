@@ -168,7 +168,7 @@ const config = {
 const fetchTrashedUsers = async () => {
   loadingUsers.value = true;
   try {
-    const response = await axios.get('http://localhost:8000/api/users/trashed', config);
+    const response = await axios.get('https://sdb-sistema-production.up.railway.app/api/users/trashed', config);
     trashedUsers.value = response.data;
   } catch (error) {
     console.error("Error al cargar papelera de usuarios:", error);
@@ -181,7 +181,7 @@ const restoreUser = async (user) => {
   if (!confirm(`¿Estás seguro de que deseas reactivar la cuenta de ${user.nombres}? Reanudará todos sus privilegios.`)) return;
   processingId.value = user.id;
   try {
-    const response = await axios.post(`http://localhost:8000/api/users/${user.id}/restore`, {}, config);
+    const response = await axios.post(`https://sdb-sistema-production.up.railway.app/api/users/${user.id}/restore`, {}, config);
     alert(response.data.message);
     await fetchTrashedUsers();
   } catch (error) {
@@ -196,7 +196,7 @@ const restoreUser = async (user) => {
 const fetchTrashedCuadrillas = async () => {
   loadingCuadrillas.value = true;
   try {
-    const response = await axios.get('http://localhost:8000/api/cuadrillas/trashed', config);
+    const response = await axios.get('https://sdb-sistema-production.up.railway.app/api/cuadrillas/trashed', config);
     trashedCuadrillas.value = response.data;
   } catch (error) {
     console.error("Error al cargar papelera de cuadrillas:", error);
@@ -209,7 +209,7 @@ const restoreCuadrilla = async (cuadrilla) => {
   if (!confirm(`¿Deseas restaurar la cuadrilla "${cuadrilla.nombre}"? Volverá a estar disponible para asignaciones de baches.`)) return;
   processingId.value = cuadrilla.id;
   try {
-    const response = await axios.post(`http://localhost:8000/api/cuadrillas/${cuadrilla.id}/restore`, {}, config);
+    const response = await axios.post(`https://sdb-sistema-production.up.railway.app/api/cuadrillas/${cuadrilla.id}/restore`, {}, config);
     alert(response.data.message);
     await fetchTrashedCuadrillas(); 
   } catch (error) {
@@ -224,7 +224,7 @@ const restoreCuadrilla = async (cuadrilla) => {
 const fetchTrashedObreros = async () => {
   loadingObreros.value = true;
   try {
-    const response = await axios.get('http://localhost:8000/api/obreros/trashed', config);
+    const response = await axios.get('https://sdb-sistema-production.up.railway.app/api/obreros/trashed', config);
     trashedObreros.value = response.data;
   } catch (error) {
     console.error("Error al cargar papelera de obreros:", error);
@@ -239,7 +239,7 @@ const restoreObrero = async (obrero) => {
   
   processingId.value = obrero.id;
   try {
-    const response = await axios.post(`http://localhost:8000/api/obreros/${obrero.id}/restore`, {}, config);
+    const response = await axios.post(`https://sdb-sistema-production.up.railway.app/api/obreros/${obrero.id}/restore`, {}, config);
     alert(response.data.message || "Personal reactivado con éxito.");
     await fetchTrashedObreros(); // Refresca el arreglo local de la tabla
   } catch (error) {

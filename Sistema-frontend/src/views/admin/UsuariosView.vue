@@ -35,7 +35,7 @@ const guardarUsuario = async () => {
   try {
     // IMPORTANTE: Pasamos los headers como tercer argumento
     await axios.post(
-      'http://localhost:8000/api/users', 
+      'https://sdb-sistema-production.up.railway.app/api/users', 
       form.value, 
       getAuthHeaders()
     );
@@ -61,7 +61,7 @@ const guardarUsuario = async () => {
 const obtenerUsuarios = async () => {
   try {
     // IMPORTANTE: Pasamos los headers como segundo argumento en GET
-    const res = await axios.get('http://localhost:8000/api/users', getAuthHeaders());
+    const res = await axios.get('https://sdb-sistema-production.up.railway.app/api/users', getAuthHeaders());
     usuarios.value = res.data;
   } catch (error) {
     console.error("Error al cargar la lista de usuarios:", error);

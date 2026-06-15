@@ -130,7 +130,7 @@ const cargarSensores = async () => {
   loading.value = true;
   try {
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    const res = await axios.get('http://localhost:8000/api/sensores', config);
+    const res = await axios.get('https://sdb-sistema-production.up.railway.app/api/sensores', config);
     sensores.value = res.data;
   } catch (e) {
     console.error("Error al sincronizar el inventario de hardware:", e);
@@ -147,11 +147,11 @@ const guardarSensor = async () => {
   
   try {
     if (isEditing.value) {
-      await axios.put(`http://localhost:8000/api/sensores/${editingId.value}`, form.value, config);
+      await axios.put(`https://sdb-sistema-production.up.railway.app/api/sensores/${editingId.value}`, form.value, config);
       alert("Hardware actualizado correctamente.");
       cancelarEdicion();
     } else {
-      await axios.post('http://localhost:8000/api/sensores', form.value, config);
+      await axios.post('https://sdb-sistema-production.up.railway.app/api/sensores', form.value, config);
       alert(`Sensor '${form.value.codigo}' añadido al inventario con éxito.`);
       form.value = { codigo: '', modelo: '', estado: 'Disponible' };
     }
@@ -186,7 +186,7 @@ const eliminarSensor = async (id, codigo) => {
   loading.value = true; 
   try {
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    const res = await axios.delete(`http://localhost:8000/api/sensores/${id}`, config);
+    const res = await axios.delete(`https://sdb-sistema-production.up.railway.app/api/sensores/${id}`, config);
     alert(res.data.message || "Sensor eliminado.");
     
     if (editingId.value === id) cancelarEdicion();

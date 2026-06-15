@@ -206,16 +206,16 @@ const cargarDatos = async () => {
   try {
     const config = { headers: { Authorization: `Bearer ${token}` } };
     
-    const resUser = await axios.get('http://localhost:8000/api/user', config);
+    const resUser = await axios.get('https://sdb-sistema-production.up.railway.app/api/user', config);
     user.value = resUser.data;
     
-    const resC = await axios.get('http://localhost:8000/api/cuadrillas', config);
+    const resC = await axios.get('https://sdb-sistema-production.up.railway.app/api/cuadrillas', config);
     cuadrillas.value = resC.data;
     
     // 🔥 REFACTORIZADO: Permitimos que el Técnico también descargue la lista de Jefes de Cuadrilla para armar los equipos
     const rangoLimpio = user.value.role?.nombre?.toLowerCase();
     if (rangoLimpio === 'administrador' || rangoLimpio === 'técnico') {
-      const resU = await axios.get('http://localhost:8000/api/users', config);
+      const resU = await axios.get('https://sdb-sistema-production.up.railway.app/api/users', config);
       usuariosJefes.value = resU.data.filter(u => 
         u.role && (u.role.nombre.toLowerCase() === 'jefe de cuadrilla')
       );
@@ -257,7 +257,7 @@ const exportarPdfIndividual = async (id) => {
       responseType: 'blob' 
     };
     
-    const res = await axios.get(`http://localhost:8000/api/cuadrillas/${id}/exportar-pdf`, config);
+    const res = await axios.get(`https://sdb-sistema-production.up.railway.app/api/cuadrillas/${id}/exportar-pdf`, config);
     
     const blob = new Blob([res.data], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
@@ -314,11 +314,11 @@ const guardarCuadrilla = async () => {
   
   try {
     if (isEditing.value) {
-      await axios.put(`http://localhost:8000/api/cuadrillas/${editingId.value}`, form.value, config);
+      await axios.put(`https://sdb-sistema-production.up.railway.app/api/cuadrillas/${editingId.value}`, form.value, config);
       alert("Cuadrilla modificada con éxito.");
       cancelarEdicion();
     } else {
-      await axios.post('http://localhost:8000/api/cuadrillas', form.value, config);
+      await axios.post('https://sdb-sistema-production.up.railway.app/api/cuadrillas', form.value, config);
       alert("Cuadrilla '" + form.value.nombre + "' creada exitosamente.");
       form.value = { nombre: '', jefe_id: null };
     }
@@ -349,7 +349,7 @@ const verCuadrilla = async (id) => {
   loading.value = true;
   try {
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    const res = await axios.get(`http://localhost:8000/api/cuadrillas/${id}`, config);
+    const res = await axios.get(`https://sdb-sistema-production.up.railway.app/api/cuadrillas/${id}`, config);
     cuadrillaSeleccionada.value = res.data;
     modalDetalle.value = true;
   } catch (e) {
@@ -366,7 +366,7 @@ const eliminarCuadrilla = async (id, nombre) => {
   loading.value = true; 
   try {
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    const res = await axios.delete(`http://localhost:8000/api/cuadrillas/${id}`, config);
+    const res = await axios.delete(`https://sdb-sistema-production.up.railway.app/api/cuadrillas/${id}`, config);
     alert(res.data.message || "Cuadrilla eliminada con éxito.");
     
     if (editingId.value === id) cancelarEdicion();

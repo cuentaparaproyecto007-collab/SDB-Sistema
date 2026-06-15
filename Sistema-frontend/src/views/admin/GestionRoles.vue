@@ -133,8 +133,8 @@ const getHeaders = () => ({ headers: { Authorization: `Bearer ${localStorage.get
 const fetchData = async () => {
   try {
     const [r, p] = await Promise.all([
-      axios.get('http://localhost:8000/api/roles-permissions', getHeaders()),
-      axios.get('http://localhost:8000/api/permissions', getHeaders())
+      axios.get('https://sdb-sistema-production.up.railway.app/api/roles-permissions', getHeaders()),
+      axios.get('https://sdb-sistema-production.up.railway.app/api/permissions', getHeaders())
     ]);
     roles.value = r.data;
     allPermissions.value = p.data;
@@ -167,7 +167,7 @@ const cancelEdit = () => {
 const saveRole = async () => {
   loading.value = true;
   try {
-    await axios.post('http://localhost:8000/api/roles-permissions', form.value, getHeaders());
+    await axios.post('https://sdb-sistema-production.up.railway.app/api/roles-permissions', form.value, getHeaders());
     await fetchData();
     cancelEdit();
     alert("✅ Operación realizada con éxito");

@@ -259,7 +259,7 @@ const handleLogout = async () => {
   try {
     const token = localStorage.getItem('token');
     if (token) {
-      await axios.post('http://localhost:8000/api/logout', {}, {
+      await axios.post('https://sdb-sistema-production.up.railway.app/api/logout', {}, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json'

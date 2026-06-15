@@ -213,10 +213,10 @@ const cargarDatosFlota = async () => {
   loading.value = true;
   try {
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    const resV = await axios.get('http://localhost:8000/api/vehiculos', config);
+    const resV = await axios.get('https://sdb-sistema-production.up.railway.app/api/vehiculos', config);
     vehiculos.value = resV.data;
 
-    const resS = await axios.get('http://localhost:8000/api/sensores-disponibles', config);
+    const resS = await axios.get('https://sdb-sistema-production.up.railway.app/api/sensores-disponibles', config);
     sensoresDisponibles.value = resS.data;
   } catch (e) {
     console.error("Error crítico de sincronización de la flota:", e);
@@ -243,7 +243,7 @@ const exportarFlotaGeneralPdf = async () => {
   exportingGeneral.value = true;
   try {
     const config = { headers: { Authorization: `Bearer ${token}` }, responseType: 'blob' };
-    const res = await axios.get('http://localhost:8000/api/vehiculos-exportar-general-pdf', config);
+    const res = await axios.get('https://sdb-sistema-production.up.railway.app/api/vehiculos-exportar-general-pdf', config);
     
     const blob = new Blob([res.data], { type: 'application/pdf' });
     const url = window.URL.createObjectURL(blob);
@@ -264,7 +264,7 @@ const exportarFlotaGeneralExcel = async () => {
   exportingGeneral.value = true;
   try {
     const config = { headers: { Authorization: `Bearer ${token}` }, responseType: 'blob' };
-    const res = await axios.get('http://localhost:8000/api/vehiculos-exportar-general-excel', config);
+    const res = await axios.get('https://sdb-sistema-production.up.railway.app/api/vehiculos-exportar-general-excel', config);
     
     const blob = new Blob([res.data], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -288,7 +288,7 @@ const abrirModalInspeccion = async (vehiculo) => {
   
   try {
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    const res = await axios.get(`http://localhost:8000/api/vehiculos/${vehiculo.id}/baches`, config);
+    const res = await axios.get(`https://sdb-sistema-production.up.railway.app/api/vehiculos/${vehiculo.id}/baches`, config);
     bachesAsociados.value = res.data.baches;
   } catch (e) {
     console.error("Error al traer auditoría de baches:", e);
@@ -306,7 +306,7 @@ const descargarPdfReporte = async () => {
   downloadingPdf.value = true;
   try {
     const config = { headers: { Authorization: `Bearer ${token}` }, responseType: 'blob' };
-    const res = await axios.get(`http://localhost:8000/api/vehiculos/${vehiculoSeleccionado.value.id}/exportar-pdf`, config);
+    const res = await axios.get(`https://sdb-sistema-production.up.railway.app/api/vehiculos/${vehiculoSeleccionado.value.id}/exportar-pdf`, config);
     
     const blob = new Blob([res.data], { type: 'application/pdf' });
     const url = window.URL.createObjectURL(blob);
@@ -341,11 +341,11 @@ const guardarVehiculo = async () => {
   const config = { headers: { Authorization: `Bearer ${token}` } };
   try {
     if (isEditing.value) {
-      await axios.put(`http://localhost:8000/api/vehiculos/${editingId.value}`, form.value, config);
+      await axios.put(`https://sdb-sistema-production.up.railway.app/api/vehiculos/${editingId.value}`, form.value, config);
       alert("Unidad móvil actualizada correctamente.");
       cancelarEdicion();
     } else {
-      await axios.post('http://localhost:8000/api/vehiculos', form.value, config);
+      await axios.post('https://sdb-sistema-production.up.railway.app/api/vehiculos', form.value, config);
       alert(`Vehículo Placa '${form.value.placa}' registrado con éxito.`);
       form.value = { placa: '', marca: '', modelo: '', tipo: 'Camioneta', sensor_id: null };
     }
@@ -383,7 +383,7 @@ const eliminarVehiculo = async (id, placa) => {
   loading.value = true; 
   try {
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    await axios.delete(`http://localhost:8000/api/vehiculos/${id}`, config);
+    await axios.delete(`https://sdb-sistema-production.up.railway.app/api/vehiculos/${id}`, config);
     alert("Vehículo eliminado de la flota.");
     if (editingId.value === id) cancelarEdicion();
     await cargarDatosFlota();

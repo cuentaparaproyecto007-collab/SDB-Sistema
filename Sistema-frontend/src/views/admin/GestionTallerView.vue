@@ -259,7 +259,7 @@
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api/personal-taller';
+const API_URL = 'https://sdb-sistema-production.up.railway.app/api/personal-taller';
 
 const editando = ref(false);
 const tecnicoIdSeleccionado = ref(null);

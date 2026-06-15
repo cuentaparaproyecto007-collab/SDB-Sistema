@@ -164,9 +164,9 @@
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 
-const API_MANTENIMIENTOS = 'http://localhost:8000/api/mantenimientos';
-const API_VEHICULOS = 'http://localhost:8000/api/vehiculos';
-const API_TECNICOS = 'http://localhost:8000/api/personal-taller';
+const API_MANTENIMIENTOS = 'https://sdb-sistema-production.up.railway.app/api/mantenimientos';
+const API_VEHICULOS = 'https://sdb-sistema-production.up.railway.app/api/vehiculos';
+const API_TECNICOS = 'https://sdb-sistema-production.up.railway.app/api/personal-taller';
 
 const editando = ref(false);
 const mantenimientoIdSeleccionado = ref(null);

@@ -186,7 +186,7 @@ const config = { headers: { 'Authorization': `Bearer ${token}` } };
 
 const cargarInventario = async () => {
   try {
-    const res = await axios.get('http://localhost:8000/api/materiales', config);
+    const res = await axios.get('https://sdb-sistema-production.up.railway.app/api/materiales', config);
     materiales.value = Array.isArray(res.data) ? res.data : (res.data.data || []);
   } catch (error) {
     console.error("Error al conectar con el inventario S.D.B.:", error);
@@ -195,7 +195,7 @@ const cargarInventario = async () => {
 
 const cargarCuadrillas = async () => {
   try {
-    const res = await axios.get('http://localhost:8000/api/cuadrillas', config);
+    const res = await axios.get('https://sdb-sistema-production.up.railway.app/api/cuadrillas', config);
     cuadrillas.value = Array.isArray(res.data) ? res.data : (res.data.data || []);
   } catch (error) {
     console.error("Error al recuperar las cuadrillas viales:", error);
@@ -204,7 +204,7 @@ const cargarCuadrillas = async () => {
 
 const cargarDespachosActivos = async () => {
   try {
-    const res = await axios.get('http://localhost:8000/api/cuadrillas-material/activos', config);
+    const res = await axios.get('https://sdb-sistema-production.up.railway.app/api/cuadrillas-material/activos', config);
     despachosActivos.value = Array.isArray(res.data) ? res.data : (res.data.data || []);
   } catch (error) {
     console.error("Error al cargar monitoreo de camiones:", error);
@@ -216,7 +216,7 @@ const crearMaterial = async () => {
     return alert("⚠️ Ingrese un nombre válido y un stock inicial mayor o igual a cero.");
   }
   try {
-    await axios.post('http://localhost:8000/api/materiales', nuevoMaterial.value, config);
+    await axios.post('https://sdb-sistema-production.up.railway.app/api/materiales', nuevoMaterial.value, config);
     alert("🎉 Insumo vial dado de alta en el inventario general.");
     nuevoMaterial.value = { nombre: '', stock_actual: '' };
     mostrarFormNuevo.value = false;
@@ -232,7 +232,7 @@ const ejecutarDespacho = async () => {
     return alert("⚠️ Seleccione una cuadrilla, un tipo de material y defina una cantidad válida.");
   }
   try {
-    const respuesta = await axios.post('http://localhost:8000/api/cuadrillas-material/despachar', {
+    const respuesta = await axios.post('https://sdb-sistema-production.up.railway.app/api/cuadrillas-material/despachar', {
       cuadrilla_id: d.cuadrilla_id,
       material_id: d.material_id,
       cantidad: d.cantidad
@@ -254,7 +254,7 @@ const ejecutarCierreJornada = async (despacho) => {
   if (!confirm(`¿Confirmar cierre de jornada para [${nombreCuadrilla}]? El saldo sobrante de ${despacho.cantidad_actual} m³ retornará al inventario central.`)) return;
 
   try {
-    const respuesta = await axios.post('http://localhost:8000/api/cuadrillas-material/cerrar-jornada', {
+    const respuesta = await axios.post('https://sdb-sistema-production.up.railway.app/api/cuadrillas-material/cerrar-jornada', {
       cuadrilla_id: despacho.cuadrilla_id,
       material_id: despacho.material_id
     }, config);
@@ -277,7 +277,7 @@ const guardarCambiosMaterial = async () => {
   const m = materialSeleccionado.value;
   if (!m.nombre || m.stock_actual < 0) return alert("Valores no válidos.");
   try {
-    await axios.put(`http://localhost:8000/api/materiales/${m.id}`, {
+    await axios.put(`https://sdb-sistema-production.up.railway.app/api/materiales/${m.id}`, {
       nombre: m.nombre,
       stock_actual: m.stock_actual
     }, config);
@@ -292,7 +292,7 @@ const guardarCambiosMaterial = async () => {
 const eliminarMaterial = async (id, nombre) => {
   if (!confirm(`¿Está seguro de remover '${nombre}' del inventario? Esta acción será auditada.`)) return;
   try {
-    const res = await axios.delete(`http://localhost:8000/api/materiales/${id}`, config);
+    const res = await axios.delete(`https://sdb-sistema-production.up.railway.app/api/materiales/${id}`, config);
     alert("🎉 " + res.data.message);
     await cargarInventario();
   } catch (error) {
