@@ -24,6 +24,9 @@ return [
         'http://localhost:5174', 
         'http://127.0.0.1:5174',
         'http://localhost:8000',
+
+        // 🚀 URL DE PRODUCCIÓN DE TU FRONTEND EN RAILWAY
+        'https://positive-courtesy-production-e5a2.up.railway.app',
     ],
 
     'allowed_origins_patterns' => [],
