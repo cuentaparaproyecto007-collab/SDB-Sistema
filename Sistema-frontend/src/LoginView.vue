@@ -105,6 +105,10 @@
           <div v-if="debugOtp" class="debug-otp mt-4">
             <small>🔑 Código de prueba: <b>{{ debugOtp }}</b></small>
           </div>
+
+          <div class="version-tag-container">
+            <span>v2.1.0</span>
+          </div>
         </div>
       </div>
 
@@ -294,13 +298,23 @@ const saveSession = (data) => {
 .login-container { 
   width: 100%;
   max-width: 410px; 
-  padding: 45px 35px; 
+  padding: 45px 35px 30px 35px; 
   background: rgba(13, 27, 56, 0.75) !important; 
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   border-radius: 24px; 
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+}
+
+.version-tag-container {
+  text-align: center;
+  margin-top: 25px;
+  font-size: 0.75rem;
+  color: rgba(148, 163, 184, 0.35); /* Gris sutil que no compite con los botones */
+  font-weight: 600;
+  letter-spacing: 0.06rem;
+  width: 100%;
 }
 
 .login-header { text-align: center; margin-bottom: 35px; }
